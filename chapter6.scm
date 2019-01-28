@@ -1,0 +1,83 @@
+(load "axioms.scm")
+
+;;; The Little Prover
+;;; Chapter 6 - Think It Through
+
+;; Define `memb?` and `remb` and prove they are total - same as in recess.scm
+(defun prelude+memb?+remb ()
+  (J-Bob/define (prelude)
+                '(((defun memb? (xs)
+                     (if (atom xs)
+                         'nil
+                         (if (equal (car xs) '?)
+                             't
+                             (memb? (cdr xs)))))
+                   (size xs)
+                   ((Q) (natp/size xs))
+                   ((A E E) (size/cdr xs))
+                   ((A E) (if-same (equal (car xs) '?) 't))
+                   ((A) (if-same (atom xs) 't))
+                   (() (if-true 't 'nil)))
+                  ((defun remb (xs)
+                     (if (atom xs)
+                         '()
+                         (if (equal (car xs) '?)
+                             (remb (cdr xs))
+                             (cons (car xs) (remb (cdr xs))))))
+                   (size xs)
+                   ((Q) (natp/size xs))
+                   ((A E) (size/cdr xs))
+                   ((A) (if-same (atom xs) 't))
+                   (() (if-true 't 'nil))))))
+
+;; Prove theorem `memb?/remb` - frame 6:33
+(J-Bob/prove (prelude+memb?+remb)
+             '(((dethm memb?/remb (xs)
+                       (equal (memb? (remb xs)) 'nil))
+                (list-induction xs)
+                ((A 1 1) (remb xs))
+                ((A 1 1) (if-nest-A (atom xs)
+                                    '()
+                                    (if (equal (car xs) '?)
+                                        (remb (cdr xs))
+                                        (cons (car xs) (remb (cdr xs))))))
+                ((A 1) (memb? '()))
+                ((A 1 Q) (atom '()))
+                ((A 1) (if-true
+                        'nil
+                        (if (equal (car '()) '?) 't (memb? (cdr '())))))
+                ((A) (equal-same 'nil))
+                ((E A 1 1) (remb xs))
+                ((E A 1 1) (if-nest-E (atom xs)
+                                      '()
+                                      (if (equal (car xs) '?)
+                                          (remb (cdr xs))
+                                          (cons (car xs) (remb (cdr xs))))))
+                ((E A 1) (if-same (equal (car xs) '?)
+                                  (memb?
+                                   (if (equal (car xs) '?)
+                                       (remb (cdr xs))
+                                       (cons (car xs) (remb (cdr xs)))))))
+                ((E A 1 A 1) (if-nest-A (equal (car xs) '?)
+                                        (remb (cdr xs))
+                                        (cons (car xs) (remb (cdr xs)))))
+                ((E A 1 E 1) (if-nest-E (equal (car xs) '?)
+                                        (remb (cdr xs))
+                                        (cons (car xs) (remb (cdr xs)))))
+                ((E A 1 A) (equal-if (memb? (remb (cdr xs))) 'nil))
+                ((E A 1 E) (memb? (cons (car xs) (remb (cdr xs)))))
+                ((E A 1 E Q) (atom/cons (car xs) (remb (cdr xs))))
+                ((E A 1 E E Q 1) (car/cons (car xs) (remb (cdr xs))))
+                ((E A 1 E) (if-false 'nil
+                                     (if (equal (car xs) '?)
+                                         't
+                                         (memb? (cdr (cons (car xs) (remb (cdr xs))))))))
+                ((E A 1 E) (if-nest-E (equal (car xs) '?)
+                                      't
+                                      (memb? (cdr (cons (car xs) (remb (cdr xs)))))))
+                ((E A 1 E 1) (cdr/cons (car xs) (remb (cdr xs))))
+                ((E A 1 E) (equal-if (memb? (remb (cdr xs))) 'nil))
+                ((E A 1) (if-same (equal (car xs) '?) 'nil))
+                ((E A) (equal-same 'nil))
+                ((E) (if-same (equal (memb? (remb (cdr xs))) 'nil) 't))
+                (() (if-same (atom xs) 't)))))
